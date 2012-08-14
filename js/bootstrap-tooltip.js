@@ -255,8 +255,9 @@
       var $this = $(this)
         , data = $this.data('tooltip')
         , options = typeof option == 'object' && option
-      if (!data) $this.data('tooltip', (data = new Tooltip(this, options)))
-      if (typeof option == 'string') data[option]()
+        , action = typeof option == 'string' && option.length && option
+      if (!data && options) $this.data('tooltip', (data = new Tooltip(this, options)))
+      if (data && action) data[action]()
     })
   }
 
