@@ -101,10 +101,17 @@
         , actualHeight
         , placement
         , tp
+        , tipIsNew
 
       if (this.hasContent() && this.enabled) {
-        $tip = this.tip()
-        this.setContent()
+        tipIsNew = !this.tipExisting()
+        $tip = this.tip(true)
+
+        if (tipIsNew) {
+          this.setContent()
+        }
+
+        $tip.removeClass('fade in top bottom left right')
 
         if (this.options.animation) {
           $tip.addClass('fade')
@@ -117,7 +124,7 @@
         inside = /in/.test(placement)
 
         $tip
-          .remove()
+          .detach()
           .css({ top: 0, left: 0, display: 'block' })
           .appendTo(inside ? this.$element : document.body)
 
@@ -162,10 +169,10 @@
         , title = this.getTitle()
 
       $tip.find('.tooltip-inner')[this.isHTML(title) ? 'html' : 'text'](title)
-      $tip.removeClass('fade in top bottom left right')
     }
 
-  , hide: function () {
+  , _hideOrRemove: function (removalFn) {
+      if (!this.tipExisting()) return
       var that = this
         , $tip = this.tip()
 
@@ -178,13 +185,22 @@
 
         $tip.one($.support.transition.end, function () {
           clearTimeout(timeout)
-          $tip.remove()
+          removalFn.call($tip)
         })
       }
 
       $.support.transition && this.$tip.hasClass('fade') ?
         removeWithAnimation() :
-        $tip.remove()
+        removalFn.call($tip)
+    }
+  
+  , hide: function () {
+      this._hideOrRemove($.fn.detach)
+    }
+
+  , remove: function () {
+      this._hideOrRemove($.fn.remove)
+      this.$tip = undefined
     }
 
   , fixTitle: function () {
@@ -216,8 +232,14 @@
       return title
     }
 
-  , tip: function () {
-      return this.$tip = this.$tip || $(this.options.template)
+  , tip: function (createIfNecessary) {
+      if (this.tipExisting()) return this.$tip
+      else if (createIfNecessary) return this.$tip = $(this.options.template)
+      else throw new Error('tip not existing')
+    }
+
+  , tipExisting: function() {
+      return !!this.$tip
     }
 
   , validate: function () {
@@ -241,7 +263,8 @@
     }
 
   , toggle: function () {
-      this[this.tip().hasClass('in') ? 'hide' : 'show']()
+      if (!this.tipExisting()) this.show()
+      else this[this.tip().hasClass('in') ? 'hide' : 'show']()
     }
 
   }
